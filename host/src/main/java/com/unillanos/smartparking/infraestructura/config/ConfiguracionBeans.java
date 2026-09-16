@@ -3,6 +3,9 @@ package com.unillanos.smartparking.infraestructura.config;
 import com.unillanos.smartparking.aplicacion.EjecutorSerie;
 import com.unillanos.smartparking.aplicacion.comando.FabricaComandos;
 import com.unillanos.smartparking.aplicacion.comando.InvocadorComandos;
+import com.unillanos.smartparking.aplicacion.seguridad.AuthenticationService;
+import com.unillanos.smartparking.aplicacion.seguridad.AuthorizationService;
+import com.unillanos.smartparking.aplicacion.seguridad.SimplePasswordHasher;
 import com.unillanos.smartparking.aplicacion.servicio.ConfiguracionServicio;
 import com.unillanos.smartparking.aplicacion.servicio.ConsultaEstadoServicio;
 import com.unillanos.smartparking.aplicacion.servicio.ConsultaHistorialServicio;
@@ -15,6 +18,7 @@ import com.unillanos.smartparking.aplicacion.servicio.SincronizarCuposServicio;
 import com.unillanos.smartparking.dominio.barrera.Barrera;
 import com.unillanos.smartparking.dominio.modelo.EstadoAlarma;
 import com.unillanos.smartparking.dominio.modelo.EstadoParqueadero;
+import com.unillanos.smartparking.dominio.autenticacion.PasswordHasher;
 import com.unillanos.smartparking.dominio.modelo.TipoPunto;
 import com.unillanos.smartparking.dominio.politica.PoliticaAcceso;
 import com.unillanos.smartparking.dominio.politica.PoliticaAccesoPorDefecto;
@@ -33,6 +37,7 @@ import com.unillanos.smartparking.dominio.puerto.salida.RepositorioConfiguracion
 import com.unillanos.smartparking.dominio.puerto.salida.RepositorioEventoSeguridad;
 import com.unillanos.smartparking.dominio.puerto.salida.RepositorioEventoSistema;
 import com.unillanos.smartparking.dominio.puerto.salida.RepositorioRegistroAcceso;
+import com.unillanos.smartparking.dominio.puerto.salida.UserRepository;
 import com.unillanos.smartparking.infraestructura.dispositivo.PropiedadesDispositivo;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -85,6 +90,21 @@ public class ConfiguracionBeans {
     @Bean
     public InvocadorComandos invocadorComandos() {
         return new InvocadorComandos();
+    }
+
+    @Bean
+    public PasswordHasher passwordHasher() {
+        return new SimplePasswordHasher();
+    }
+
+    @Bean
+    public AuthenticationService authenticationService(UserRepository users, PasswordHasher hasher) {
+        return new AuthenticationService(users, hasher);
+    }
+
+    @Bean
+    public AuthorizationService authorizationService() {
+        return new AuthorizationService();
     }
 
     @Bean

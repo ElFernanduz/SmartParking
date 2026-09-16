@@ -24,4 +24,7 @@ smartparking:
     latido-timeout-ms: 5000
     espera-paso-ms: 10000                  # tiempo de espera del paso del vehiculo
   seguridad:
-    token-operador: ${OPERADOR_TOKEN:cambia-este-token}
+    admin:
+      usuario: ${ADMIN_USUARIO:admin}
+      email: ${ADMIN_EMAIL:admin@unillanos.edu.co}
+      contrasena: ${ADMIN_PASSWORD:admin123}

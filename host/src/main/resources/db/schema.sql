@@ -35,3 +35,51 @@ CREATE TABLE IF NOT EXISTS evento_sistema (
     detalle   TEXT,
     timestamp TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS usuario (
+    id                 TEXT PRIMARY KEY,
+    username           TEXT NOT NULL UNIQUE,
+    email              TEXT NOT NULL UNIQUE,
+    password_hash      TEXT NOT NULL,
+    salt               TEXT NOT NULL,
+    activo             INTEGER NOT NULL DEFAULT 1,
+    creado_en          TEXT NOT NULL,
+    clave_cambiada_en  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS rol (
+    nombre TEXT PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS permiso (
+    codigo TEXT PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS rol_permiso (
+    rol_nombre     TEXT NOT NULL,
+    permiso_codigo TEXT NOT NULL,
+    PRIMARY KEY (rol_nombre, permiso_codigo)
+);
+
+CREATE TABLE IF NOT EXISTS usuario_rol (
+    usuario_id TEXT NOT NULL,
+    rol_nombre TEXT NOT NULL,
+    PRIMARY KEY (usuario_id, rol_nombre)
+);
+
+INSERT OR IGNORE INTO permiso (codigo) VALUES
+    ('BARRERA_CONTROL'),
+    ('EMERGENCIA_CONTROL'),
+    ('CONFIG_UPDATE'),
+    ('CUPOS_SYNC');
+
+INSERT OR IGNORE INTO rol (nombre) VALUES ('ADMIN'), ('OPERADOR'), ('CONSULTA');
+
+INSERT OR IGNORE INTO rol_permiso (rol_nombre, permiso_codigo) VALUES
+    ('ADMIN', 'BARRERA_CONTROL'),
+    ('ADMIN', 'EMERGENCIA_CONTROL'),
+    ('ADMIN', 'CONFIG_UPDATE'),
+    ('ADMIN', 'CUPOS_SYNC'),
+    ('OPERADOR', 'BARRERA_CONTROL'),
+    ('OPERADOR', 'EMERGENCIA_CONTROL'),
+    ('OPERADOR', 'CUPOS_SYNC');

@@ -1,17 +1,15 @@
 package com.unillanos.smartparking.web.seguridad;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@EnableConfigurationProperties(PropiedadesSeguridad.class)
 public class ConfiguracionWeb implements WebMvcConfigurer {
 
-    private final InterceptorTokenOperador interceptor;
+    private final InterceptorAutorizacion interceptor;
 
-    public ConfiguracionWeb(InterceptorTokenOperador interceptor) {
+    public ConfiguracionWeb(InterceptorAutorizacion interceptor) {
         this.interceptor = interceptor;
     }
 

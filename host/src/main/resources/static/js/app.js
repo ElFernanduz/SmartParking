@@ -1,6 +1,15 @@
 // Cliente del tablero: estado en vivo por WebSocket y consultas REST.
+// Las acciones de operador requieren sesion iniciada y el permiso que
+// corresponda; el backend vuelve a verificarlo en cada peticion.
 
-const CLAVE_TOKEN = "smartparking.tokenOperador";
+const PERMISO_POR_CONTROL = {
+    barrera: "BARRERA_CONTROL",
+    emergencia: "EMERGENCIA_CONTROL",
+    configuracion: "CONFIG_UPDATE",
+    cupos: "CUPOS_SYNC"
+};
+
+let sesion = { autenticado: false, permisos: [] };
 
 const elementos = {
     cuposDisponibles: document.getElementById("cuposDisponibles"),
@@ -12,17 +21,18 @@ const elementos = {
     estadoTablero: document.getElementById("estadoTablero"),
     tarjetaCupos: document.querySelector(".tarjeta-cupos"),
     mensaje: document.getElementById("mensaje"),
-    tokenOperador: document.getElementById("tokenOperador"),
+    estadoSesion: document.getElementById("estadoSesion"),
+    formularioAcceso: document.getElementById("formularioAcceso"),
+    usuarioAcceso: document.getElementById("usuarioAcceso"),
+    claveAcceso: document.getElementById("claveAcceso"),
+    cerrarSesion: document.getElementById("cerrarSesion"),
+    controles: document.getElementById("controles"),
     cuerpoRegistros: document.querySelector("#tablaRegistros tbody"),
     cuerpoEventos: document.querySelector("#tablaEventos tbody")
 };
 
 let graficoOcupacion = null;
 let graficoIngresos = null;
-
-function tokenGuardado() {
-    return localStorage.getItem(CLAVE_TOKEN) || "";
-}
 
 function avisar(texto, clase) {
     elementos.mensaje.textContent = texto;
@@ -47,10 +57,8 @@ async function pedir(ruta) {
 async function enviar(ruta, cuerpo) {
     const respuesta = await fetch(ruta, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-Token-Operador": tokenGuardado()
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify(cuerpo)
     });
     if (!respuesta.ok) {
@@ -271,13 +279,77 @@ function conectarTablero() {
     };
 }
 
-function conectarControles() {
-    elementos.tokenOperador.value = tokenGuardado();
-    document.getElementById("guardarToken").addEventListener("click", () => {
-        localStorage.setItem(CLAVE_TOKEN, elementos.tokenOperador.value.trim());
-        avisar("Token guardado en este navegador", "exito");
+function tienePermiso(codigo) {
+    return sesion.autenticado && sesion.permisos.includes(codigo);
+}
+
+function pintarSesion(nueva) {
+    sesion = nueva;
+
+    if (sesion.autenticado) {
+        elementos.estadoSesion.textContent = sesion.usuario + " (" + sesion.roles.join(", ") + ")";
+        elementos.estadoSesion.className = "pastilla pastilla-ok";
+    } else {
+        elementos.estadoSesion.textContent = "Sin sesion";
+        elementos.estadoSesion.className = "pastilla pastilla-gris";
+    }
+
+    elementos.formularioAcceso.hidden = sesion.autenticado;
+    elementos.cerrarSesion.hidden = !sesion.autenticado;
+    elementos.controles.hidden = !sesion.autenticado;
+
+    // Cada grupo se habilita solo si el rol trae su permiso.
+    Object.entries(PERMISO_POR_CONTROL).forEach(([grupo, codigo]) => {
+        const permitido = tienePermiso(codigo);
+        document.querySelectorAll('[data-permiso="' + grupo + '"] button').forEach((boton) => {
+            boton.disabled = !permitido;
+            boton.title = permitido ? "" : "Su rol no tiene el permiso " + codigo;
+        });
+    });
+}
+
+async function refrescarSesion() {
+    try {
+        const respuesta = await fetch("/api/auth/sesion", { credentials: "same-origin" });
+        pintarSesion(await respuesta.json());
+    } catch (error) {
+        pintarSesion({ autenticado: false, permisos: [], roles: [] });
+    }
+}
+
+function conectarAcceso() {
+    elementos.formularioAcceso.addEventListener("submit", async (evento) => {
+        evento.preventDefault();
+        try {
+            const respuesta = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "same-origin",
+                body: JSON.stringify({
+                    usuario: elementos.usuarioAcceso.value.trim(),
+                    contrasena: elementos.claveAcceso.value
+                })
+            });
+            if (!respuesta.ok) {
+                avisar("Usuario o contrasena incorrectos", "error");
+                return;
+            }
+            elementos.claveAcceso.value = "";
+            pintarSesion(await respuesta.json());
+            avisar("Sesion iniciada", "exito");
+        } catch (error) {
+            avisar(error.message, "error");
+        }
     });
 
+    elementos.cerrarSesion.addEventListener("click", async () => {
+        await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+        pintarSesion({ autenticado: false, permisos: [], roles: [] });
+        avisar("Sesion cerrada", "");
+    });
+}
+
+function conectarControles() {
     document.querySelectorAll("button.barrera").forEach((boton) => {
         boton.addEventListener("click", async () => {
             try {
@@ -337,6 +409,8 @@ function conectarControles() {
 }
 
 crearGraficos();
+conectarAcceso();
 conectarControles();
 conectarTablero();
+refrescarSesion();
 refrescarTodo();

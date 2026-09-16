@@ -14,6 +14,11 @@
     box-sizing: border-box;
 }
 
+/* El atributo hidden debe ganarle a los display de las reglas siguientes. */
+[hidden] {
+    display: none !important;
+}
+
 body {
     margin: 0;
     background: var(--fondo);
@@ -156,12 +161,29 @@ main {
     min-height: 260px;
 }
 
-.campo-token {
+.acceso {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    align-items: flex-end;
+    gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 20px;
+}
+
+.acceso .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Un control sin permiso sigue visible, pero se ve y se comporta como apagado. */
+button[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+button[disabled]:hover {
+    border-color: var(--borde);
+    color: var(--texto);
 }
 
 .controles {
