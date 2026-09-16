@@ -1,0 +1,27 @@
+server:
+  port: 7070
+
+spring:
+  datasource:
+    url: jdbc:sqlite:data/smartparking.db
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1                 # serializa las escrituras a SQLite
+      connection-init-sql: PRAGMA journal_mode=WAL;
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    open-in-view: false
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+smartparking:
+  dispositivo:
+    token: ${DISPOSITIVO_TOKEN:cambia-este-token}
+    latido-timeout-ms: 5000
+    espera-paso-ms: 10000                  # tiempo de espera del paso del vehiculo
+  seguridad:
+    token-operador: ${OPERADOR_TOKEN:cambia-este-token}
