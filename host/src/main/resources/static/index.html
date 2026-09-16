@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Lot</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="barra">
+    <h1>Smart Parking Lot</h1>
+    <div class="indicadores">
+        <span id="estadoDispositivo" class="pastilla pastilla-gris">Dispositivo: sin conexion</span>
+        <span id="estadoTablero" class="pastilla pastilla-gris">Tablero: conectando</span>
+    </div>
+</header>
+
+<main>
+    <section class="tarjetas">
+        <article class="tarjeta tarjeta-cupos">
+            <p class="etiqueta">Cupos disponibles</p>
+            <p id="cuposDisponibles" class="cupos">--</p>
+            <p id="capacidadTotal" class="subetiqueta">de -- cupos</p>
+        </article>
+        <article class="tarjeta">
+            <p class="etiqueta">Estado operativo</p>
+            <p id="estadoOperativo" class="valor">--</p>
+        </article>
+        <article class="tarjeta">
+            <p class="etiqueta">Alarma</p>
+            <p id="estadoAlarma" class="valor">--</p>
+        </article>
+        <article class="tarjeta">
+            <p class="etiqueta">Cupos ocupados</p>
+            <p id="cuposOcupados" class="valor">--</p>
+        </article>
+    </section>
+
+    <section class="panel">
+        <h2>Graficos</h2>
+        <div class="graficos">
+            <div class="grafico"><canvas id="graficoOcupacion"></canvas></div>
+            <div class="grafico"><canvas id="graficoIngresos"></canvas></div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Controles de operador</h2>
+        <div class="campo-token">
+            <label for="tokenOperador">Token de operador</label>
+            <input type="password" id="tokenOperador" placeholder="token de operador" autocomplete="off">
+            <button id="guardarToken" class="secundario">Guardar</button>
+        </div>
+
+        <div class="controles">
+            <fieldset>
+                <legend>Barreras</legend>
+                <button data-punto="ENTRADA" data-accion="ABRIR" class="barrera">Abrir entrada</button>
+                <button data-punto="ENTRADA" data-accion="CERRAR" class="barrera">Cerrar entrada</button>
+                <button data-punto="SALIDA" data-accion="ABRIR" class="barrera">Abrir salida</button>
+                <button data-punto="SALIDA" data-accion="CERRAR" class="barrera">Cerrar salida</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Emergencia</legend>
+                <button id="activarEmergencia" class="peligro">Forzar emergencia</button>
+                <button id="limpiarEmergencia">Limpiar emergencia</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Configuracion</legend>
+                <label for="capacidadNueva">Capacidad total</label>
+                <input type="number" id="capacidadNueva" min="1" max="1000">
+                <label for="umbralNuevo">Umbral de humo (0 a 4095)</label>
+                <input type="number" id="umbralNuevo" min="0" max="4095">
+                <button id="guardarConfiguracion">Guardar configuracion</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Recalibrar conteo</legend>
+                <label for="ocupadosReales">Cupos ocupados reales</label>
+                <input type="number" id="ocupadosReales" min="0">
+                <button id="sincronizarCupos">Sincronizar</button>
+            </fieldset>
+        </div>
+        <p id="mensaje" class="mensaje"></p>
+    </section>
+
+    <section class="panel">
+        <h2>Historial de accesos</h2>
+        <table id="tablaRegistros">
+            <thead>
+            <tr>
+                <th>Id</th>
+                <th>Placa</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Estado</th>
+                <th>Duracion</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+    <section class="panel">
+        <h2>Eventos de seguridad</h2>
+        <table id="tablaEventos">
+            <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nivel</th>
+                <th>Umbral</th>
+                <th>Momento</th>
+                <th>Evacuacion</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /** Traduce las excepciones de dominio a codigos HTTP con un cuerpo claro. */
 @RestControllerAdvice
@@ -34,6 +35,11 @@ public class ManejadorGlobalErrores {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .orElse("Peticion invalida");
         return respuesta(HttpStatus.BAD_REQUEST, detalle);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> recursoNoEncontrado(NoResourceFoundException e) {
+        return respuesta(HttpStatus.NOT_FOUND, "Recurso no encontrado: " + e.getResourcePath());
     }
 
     @ExceptionHandler(Exception.class)
