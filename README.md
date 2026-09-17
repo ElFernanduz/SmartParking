@@ -1,9 +1,9 @@
 # Smart Parking Lot
 
-Sistema de gestión automatizada de un parqueadero, construido como maqueta a escala. Un dispositivo ESP32-C3 con sensores y actuadores controla el acceso, y un backend en Java con arquitectura hexagonal mantiene el conteo, la seguridad y el historial, con un panel web en tiempo real.
+Sistema de gestión automatizada de un parqueadero, construido como maqueta a escala. Un dispositivo ESP32-C3 con sensores y actuadores controla el acceso, y un backend en Java con arquitectura en capas mantiene el conteo, la seguridad y el historial, con un panel web en tiempo real.
 
-![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-6DB33F?logo=springboot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4-6DB33F?logo=springboot&logoColor=white)
 ![ESP32](https://img.shields.io/badge/ESP32--C3-WiFi-E7352C?logo=espressif&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)
 ![Licencia](https://img.shields.io/badge/licencia-MIT-green)
@@ -11,7 +11,7 @@ Sistema de gestión automatizada de un parqueadero, construido como maqueta a es
 
 ## Descripción
 
-El sistema controla el acceso vehicular de forma automática, mantiene el conteo de cupos disponibles en tiempo real y vigila la presencia de humo o gas, activando una alarma cuando se supera un umbral configurable. La ESP32-C3 se comunica con el backend por WiFi mediante WebSocket; el backend concentra toda la lógica de negocio y sirve un panel web de control y monitoreo. Cada acceso y cada alerta quedan registrados de forma persistente.
+El sistema controla el acceso vehicular de forma automática, mantiene el conteo de cupos disponibles en tiempo real y vigila la presencia de humo o gas, activando una alarma cuando se supera un umbral configurable. La ESP32-C3 se comunica con el backend por WiFi mediante WebSocket; el backend concentra toda la lógica de negocio y sirve un panel web de control y monitoreo. El acceso al panel se controla con usuarios, roles y permisos. Cada acceso y cada alerta quedan registrados de forma persistente.
 
 ## Características
 
@@ -22,37 +22,37 @@ El sistema controla el acceso vehicular de forma automática, mantiene el conteo
 - Panel web de control y monitoreo con actualización en vivo.
 - Registro histórico de accesos y de eventos de seguridad.
 - Capacidad y umbral configurables sin recompilar.
+- Control de acceso al panel por usuarios, roles y permisos.
 
 ## Arquitectura
 
-Arquitectura hexagonal (puertos y adaptadores). El dominio y la aplicación no dependen de Spring ni de la base de datos ni del dispositivo: se comunican con el exterior a través de puertos, y los adaptadores implementan esos puertos con tecnología concreta. La lógica de negocio reside en el backend; la ESP32 solo detecta, ejecuta y muestra.
+Arquitectura en capas. La capa web recibe la petición y delega en la de servicio; la de servicio aplica las reglas de negocio y pide datos a la de repositorio; la de repositorio habla con SQLite. Las dependencias van siempre hacia abajo. La lógica de negocio reside en el backend; la ESP32 solo detecta, ejecuta y muestra.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph DISP["ESP32-C3"]
         FW["Firmware C++"]
     end
     subgraph HOST["Backend Spring Boot"]
-        IN["Adaptadores de entrada"]
-        CORE["Dominio y casos de uso"]
-        OUT["Adaptadores de salida"]
+        WEB["Presentacion: controladores y WebSocket"]
+        SRV["Negocio: servicios"]
+        REP["Persistencia: repositorios"]
     end
     DB[("SQLite")]
     UI["Dashboard web"]
 
-    FW <-->|WiFi, WebSocket| IN
-    IN --> CORE
-    CORE --> OUT
-    OUT <-->|WebSocket| FW
-    OUT --> DB
-    UI <-->|REST y WebSocket| IN
+    FW <-->|WiFi, WebSocket| WEB
+    UI <-->|REST y WebSocket| WEB
+    WEB --> SRV
+    SRV --> REP
+    REP --> DB
 ```
 
 ## Stack tecnológico
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Java 17, Spring Boot 3, Maven |
+| Backend | Java 25, Spring Boot 4, Maven |
 | Tiempo real y enlace con el dispositivo | Spring WebSocket |
 | Persistencia | Spring Data JPA sobre SQLite |
 | Frontend | HTML, CSS y JavaScript con Chart.js |
@@ -71,7 +71,7 @@ smart-parking-lot/
 
 ## Requisitos previos
 
-- JDK 17 o superior
+- JDK 25 o superior
 - Maven 3.9 o superior
 - IDE de Arduino con soporte para ESP32 (o PlatformIO)
 - Una ESP32-C3 con los sensores y actuadores descritos en `hardware/`

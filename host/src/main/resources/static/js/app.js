@@ -238,23 +238,23 @@ async function refrescarEstado() {
 // Cada evento del backend refresca lo que corresponde; el estado es siempre el del servidor.
 function alRecibirEvento(sobre) {
     switch (sobre.tipo) {
-        case "CuposCambiadosEvento":
-        case "EstadoSistemaCambiadoEvento":
-        case "AlarmaCambiadaEvento":
+        case "CUPOS_CAMBIADOS":
+        case "ESTADO_SISTEMA_CAMBIADO":
+        case "ALARMA_CAMBIADA":
             refrescarEstado();
             break;
-        case "VehiculoIngresadoEvento":
-        case "VehiculoEgresadoEvento":
+        case "VEHICULO_INGRESADO":
+        case "VEHICULO_EGRESADO":
             refrescarTodo();
             break;
-        case "UmbralHumoSuperadoEvento":
+        case "UMBRAL_HUMO_SUPERADO":
             avisar("Umbral de humo superado: nivel " + sobre.datos.nivel, "error");
             refrescarTodo();
             break;
-        case "BarreraBloqueadaEvento":
+        case "BARRERA_BLOQUEADA":
             avisar("Vehiculo detenido en " + sobre.datos.punto + ": la barrera sigue abierta", "error");
             break;
-        case "DispositivoConexionCambiadaEvento":
+        case "DISPOSITIVO_CONEXION":
             pintarConexionDispositivo(sobre.datos.conectado);
             break;
         default:
