@@ -133,7 +133,7 @@ ejecuta y muestra, y mantiene un modo seguro local para cuando pierde la
 conexión.
 
 
-## 3.3 Concurrencia y consistencia
+### 3.3 Concurrencia y consistencia
 
 Los mensajes del dispositivo y las peticiones del dashboard pueden llegar en hilos distintos. El `EstadoParqueaderoService` guarda el conteo en memoria y es estado mutable compartido, así que dos eventos simultáneos podrían leer el mismo valor de cupos y descontar dos veces, dejando el conteo inconsistente. Además, SQLite bloquea el archivo completo al escribir, y dos escrituras a la vez (un ingreso y una telemetría de humo) fallarían por base bloqueada.
 
@@ -283,7 +283,7 @@ En Lleno se bloquea la apertura de la entrada; la salida sigue disponible. En Em
 - `PoliticaAcceso` (interfaz): `boolean admiteIngreso(EstadoParqueadero estado)`.
 - `PoliticaAccesoPorDefecto`: permite el ingreso si `cuposDisponibles > 0` y el estado es `OPERATIVO`.
 
-Se declara como bean en `ConfiguracionBeans`. Cambiar la regla solo implica una nueva implementación, sin tocar los casos de uso.
+`PoliticaAccesoPorDefecto` se anota con `@Component` y Spring la inyecta en `AccesoService`. Cambiar la regla solo implica una nueva implementación de la interfaz, sin tocar los servicios.
 
 ## 8. Notificaciones al tablero
 
@@ -485,9 +485,19 @@ sesiones más estricta.
 
 Archivos estáticos servidos por Spring desde `src/main/resources/static`:
 
-- `index.html`: panel con cupos disponibles en grande, capacidad, estado operativo y estado de alarma; controles de operador (abrir y cerrar barreras, forzar y limpiar emergencia, cambiar capacidad y umbral); tablas de historial de accesos y de eventos de seguridad; gráficos con Chart.js.
+- `index.html`: panel con cupos disponibles en grande, capacidad, estado operativo, estado de alarma y conexión del dispositivo; formulario de acceso; controles de operador (abrir y cerrar barreras, forzar y limpiar emergencia, cambiar capacidad y umbral, recalibrar el conteo); tablas de historial de accesos y de eventos de seguridad; gráficos con Chart.js.
 - `css/styles.css`: estilo sobrio, con énfasis en la legibilidad del número de cupos a distancia.
-- `js/app.js`: cliente WebSocket a `/tablero` para actualización en vivo, llamadas REST para historial y configuración, y render de los gráficos.
+- `js/app.js`: cliente WebSocket a `/tablero` para actualización en vivo, llamadas REST para historial y configuración, manejo de la sesión y render de los gráficos.
+- `favicon.svg`: icono del panel.
+
+No se usa ningún framework de frontend: es HTML, CSS y JavaScript sin
+transpilación ni empaquetado. La única librería externa es Chart.js, cargada
+por CDN con una etiqueta `<script>`.
+
+Los controles de operador permanecen ocultos mientras no haya sesión iniciada,
+y cada grupo se habilita solo si el rol del usuario trae el permiso que esa
+acción exige (sección 14.4). Es una ayuda visual: el backend vuelve a verificar
+el permiso en cada petición, así que ocultar un botón no es la protección.
 
 El panel es el indicador visible de cupos por defecto (RF-13). Un display físico es opcional.
 
@@ -811,14 +821,28 @@ es por WebSocket, que ya provee el starter correspondiente.
 
 ## 23. Estrategia de pruebas
 
-La arquitectura permite probar el núcleo sin hardware.
+La arquitectura permite probar la lógica sin hardware: la capa de servicio se prueba con los repositorios y `DispositivoService` simulados.
 
 - Pruebas unitarias sin Spring: invariantes de `EstadoParqueaderoService`, transiciones de la barrera, `PoliticaAccesoPorDefecto` y el cifrado de contraseñas.
 - Pruebas de la capa de servicio (JUnit y Mockito): con repositorios y `DispositivoService` simulados. Verifican que el ingreso descuenta cupo, ordena abrir y guarda el registro; que la salida suma cupo y cierra el registro; que superar el umbral activa alarma, registra evento y dispara la emergencia.
 - Pruebas del codificador de mensajes: JSON a mensaje y mensaje a JSON.
 - Pruebas de persistencia (`@DataJpaTest`): los repositorios de Spring Data contra una base SQLite temporal.
-- Pruebas de la web (`@WebMvcTest`): los controladores con casos de uso simulados.
-- Prueba de recuperación: con datos precargados, el arranque reconstruye el conteo correcto.
+- Pruebas de la web (`@WebMvcTest`): los controladores con los servicios simulados, incluido el control de acceso por permisos (401 sin sesión, 403 sin permiso).
+- Prueba de recuperación (`@SpringBootTest`): con datos precargados, el arranque reconstruye el conteo correcto y crea el administrador inicial.
+
+Clases de prueba, 71 casos en total:
+
+| Clase | Qué cubre |
+|---|---|
+| `EstadoParqueaderoServiceTest` | Invariante del conteo, transición a LLENO y recalibración. |
+| `BarreraTest` | Ciclo de la barrera y condición segura al cerrar. |
+| `PoliticaAccesoPorDefectoTest` | Admisión con cupos, sin cupos y en emergencia. |
+| `AccesoServiceTest` | Ingreso con reserva, confirmación, reversión por vencimiento y salida emparejada. |
+| `SeguridadServiceTest` | Login por usuario o correo, cuentas inactivas, permisos efectivos y cifrado. |
+| `CodificadorMensajesTest` | Ida y vuelta del protocolo del dispositivo. |
+| `PersistenciaTest` | Repositorios contra una base SQLite temporal, con roles y permisos. |
+| `ControladoresWebTest` | Rutas REST, validación, errores y control de acceso. |
+| `RecuperacionTrasReinicioTest` | Arranque completo del contexto y reconstrucción del estado. |
 
 Meta sugerida: la capa de servicio por encima del 80 por ciento de cobertura.
 
